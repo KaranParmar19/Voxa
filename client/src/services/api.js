@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_SERVER_URL}/api`;
+export const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5001';
+export const API_URL = `${SERVER_URL}/api`;
 
 // Create axios instance
 const api = axios.create({
