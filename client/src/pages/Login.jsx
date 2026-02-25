@@ -30,7 +30,7 @@ function Login() {
   };
 
   const handleGoogleLogin = () => {
-    const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:5001";
+    const serverUrl = import.meta.env.VITE_SERVER_URL;
     window.location.href = `${serverUrl}/api/auth/google`;
   };
 
