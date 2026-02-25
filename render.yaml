@@ -12,7 +12,7 @@ services:
         value: production
       - key: CLIENT_URL
         fromService:
-          type: site
+          type: static_site
           name: voxa-client
           property: url
       # You will need to add these in the Render Dashboard manually if they are secrets:
@@ -23,7 +23,7 @@ services:
       # - OPENAI_API_KEY
 
   # The Frontend Service (React/Vite)
-  - type: site
+  - type: static_site
     name: voxa-client
     env: static
     region: singapore
