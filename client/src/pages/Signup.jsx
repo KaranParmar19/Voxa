@@ -49,7 +49,7 @@ function Signup() {
   };
 
   const handleGoogleSignup = () => {
-    window.location.href = "http://localhost:5001/api/auth/google";
+    window.location.href = `${serverUrl}/api/auth/google`;
   };
 
   // Reusable floating-label input
