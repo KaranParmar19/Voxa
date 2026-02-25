@@ -49,7 +49,7 @@ function Signup() {
   };
 
   const handleGoogleSignup = () => {
-    window.location.href = `${serverUrl}/api/auth/google`;
+   window.location.href = `${import.meta.env.VITE_SERVER_URL}/api/auth/google`;
   };
 
   // Reusable floating-label input
