@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="client/src/assets/logo.svg" alt="VOXA Logo" width="120" />
   <h1>VOXA</h1>
   <p><strong>Where teams think together.</strong></p>
   <p>A real-time collaborative workspace featuring an infinite whiteboard, code editor, live chat, and voice communication.</p>
