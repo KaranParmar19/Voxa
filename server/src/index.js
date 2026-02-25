@@ -17,6 +17,9 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
+// Trust proxy for secure cookies on Render
+app.set('trust proxy', 1);
+
 // Initialize Socket.IO
 const io = new Server(server, {
     cors: {
@@ -40,6 +43,12 @@ app.use(
         secret: process.env.JWT_SECRET,
         resave: false,
         saveUninitialized: false,
+        proxy: true,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        },
     })
 );
 app.use(passport.initialize());
