@@ -26,27 +26,27 @@ Forget jumping between multiple apps—VOXA brings your entire workflow into one
 
 <details open>
 <summary><b>Landing Page</b></summary>
-<img src="docs/screenshots/Screenshot%202026-02-25%20233959.png" alt="VOXA Landing Page" width="800"/>
+<img src="docs/screenshots/landing.png" alt="VOXA Landing Page" width="800"/>
 </details>
 
 <details>
 <summary><b>Philosophy & Features</b></summary>
-<img src="docs/screenshots/Screenshot%202026-02-25%20234011.png" alt="VOXA Features" width="800"/>
+<img src="docs/screenshots/features.png" alt="VOXA Features" width="800"/>
 </details>
 
 <details>
 <summary><b>Dashboard</b></summary>
-<img src="docs/screenshots/Screenshot%202026-02-25%20233932.png" alt="VOXA Dashboard" width="800"/>
+<img src="docs/screenshots/dashboard.png" alt="VOXA Dashboard" width="800"/>
 </details>
 
 <details>
 <summary><b>Collaborative Whiteboard</b></summary>
-<img src="docs/screenshots/Screenshot%202026-02-25%20233857.png" alt="VOXA Whiteboard" width="800"/>
+<img src="docs/screenshots/whiteboard.png" alt="VOXA Whiteboard" width="800"/>
 </details>
 
 <details>
 <summary><b>Real-time Code Editor</b></summary>
-<img src="docs/screenshots/Screenshot%202026-02-25%20233907.png" alt="VOXA Code Editor" width="800"/>
+<img src="docs/screenshots/code_editor.png" alt="VOXA Code Editor" width="800"/>
 </details>
 
 
