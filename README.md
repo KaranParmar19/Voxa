@@ -5,7 +5,6 @@
 
   <div>
     <a href="https://voxa-client-77mw.onrender.com/"><img src="https://img.shields.io/badge/Live_Demo-Available-7c3aed?style=for-the-badge&logo=vercel" alt="Live Demo" /></a>
-    <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License: MIT" />
     <img src="https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react" alt="React" />
     <img src="https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js" alt="Node.js" />
     <img src="https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb" alt="MongoDB" />
