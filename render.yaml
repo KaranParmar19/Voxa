@@ -1,9 +1,8 @@
 services:
-  # Frontend (Static Site)
+  # Frontend (Vite static site)
   - type: web
     name: voxa-client
     runtime: static
-    region: singapore
 
     buildCommand: |
       cd client
@@ -17,10 +16,10 @@ services:
         fromService:
           name: voxa-server
           type: web
-          property: url
+          envVarKey: RENDER_EXTERNAL_URL
 
 
-  # Backend (Node.js)
+  # Backend (Node)
   - type: web
     name: voxa-server
     runtime: node
@@ -43,4 +42,4 @@ services:
         fromService:
           name: voxa-client
           type: web
-          property: url
+          envVarKey: RENDER_EXTERNAL_URL
