@@ -7,7 +7,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Room from './pages/Room';
 
-// Protected Route Component
+// Protected Route: redirect to home if not logged in
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
@@ -36,15 +36,22 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/" />;
 }
 
+// Public Route: redirect to dashboard if already logged in
+function PublicRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user ? <Navigate to="/dashboard" replace /> : children;
+}
+
 function App() {
   return (
     <Router>
       <AuthProvider>
         <ToastProvider>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route
               path="/dashboard"
               element={

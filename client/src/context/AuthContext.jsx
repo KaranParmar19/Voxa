@@ -25,9 +25,8 @@ export const AuthProvider = ({ children }) => {
 
             if (urlToken) {
                 localStorage.setItem('voxaToken', urlToken);
-                // Redirect to dashboard after Google OAuth
-                window.location.href = '/dashboard';
-                return;
+                // Clean URL - React Router (PublicRoute) will redirect to /dashboard
+                window.history.replaceState({}, document.title, '/');
             }
 
             const token = localStorage.getItem('voxaToken');
