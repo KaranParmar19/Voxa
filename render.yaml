@@ -1,34 +1,42 @@
 services:
-  # The Backend Service (Node.js)
+  # Backend Service (Node.js)
   - type: web
     name: voxa-server
     env: node
-    region: singapore # Optional: Choose a region close to you
-    plan: free # Optional: Explicitly use free tier
-    buildCommand: cd server && npm install
-    startCommand: cd server && npm start
+    region: singapore
+    plan: free
+
+    buildCommand: |
+      cd server
+      npm install
+
+    startCommand: |
+      cd server
+      npm start
+
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: CLIENT_URL
         fromService:
           type: static_site
           name: voxa-client
           property: url
-      # You will need to add these in the Render Dashboard manually if they are secrets:
-      # - JWT_SECRET
-      # - GOOGLE_CLIENT_ID
-      # - GOOGLE_CLIENT_SECRET
-      # - GEMINI_API_KEY
-      # - OPENAI_API_KEY
 
-  # The Frontend Service (React/Vite)
+
+  # Frontend Service (React/Vite)
   - type: static_site
     name: voxa-client
-    env: static
     region: singapore
-    buildCommand: cd client && npm install && npm run build
+
+    buildCommand: |
+      cd client
+      npm install
+      npm run build
+
     staticPublishPath: client/dist
+
     envVars:
       - key: VITE_SERVER_URL
         fromService:
