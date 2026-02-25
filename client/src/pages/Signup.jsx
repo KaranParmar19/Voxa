@@ -4,6 +4,52 @@ import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import Logo from "../components/Logo";
 
+// Defined OUTSIDE Signup so React doesn't remount it on every render
+const FloatingInput = ({ type, name, label, value, isFocused, onChange, onFocus, onBlur }) => {
+  const isActive = value !== "" || isFocused;
+  return (
+    <div style={{ position: "relative" }}>
+      <label
+        style={{
+          position: "absolute",
+          left: "14px",
+          top: isActive ? "8px" : "50%",
+          transform: isActive ? "none" : "translateY(-50%)",
+          fontSize: isActive ? "10px" : "14px",
+          color: isFocused ? "rgba(167,139,250,0.8)" : "rgba(255,255,255,0.3)",
+          transition: "all 0.2s ease",
+          pointerEvents: "none",
+          letterSpacing: isActive ? "0.05em" : "normal",
+          textTransform: isActive ? "uppercase" : "none",
+        }}
+      >
+        {label}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required
+        onFocus={onFocus}
+        onBlur={onBlur}
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          padding: isActive ? "24px 14px 10px" : "16px 14px",
+          fontSize: "14px",
+          color: "white",
+          backgroundColor: "rgba(255,255,255,0.03)",
+          border: `1px solid ${isFocused ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`,
+          borderRadius: "12px",
+          outline: "none",
+          transition: "all 0.2s ease",
+        }}
+      />
+    </div>
+  );
+};
+
 function Signup() {
   const navigate = useNavigate();
   const { signup } = useAuth();
@@ -49,59 +95,9 @@ function Signup() {
   };
 
   const handleGoogleSignup = () => {
-   window.location.href = `${import.meta.env.VITE_SERVER_URL}/api/auth/google`;
+    window.location.href = `${import.meta.env.VITE_SERVER_URL}/api/auth/google`;
   };
 
-  // Reusable floating-label input
-  const FloatingInput = ({ type, name, label }) => {
-    const hasValue = formData[name] !== "";
-    const isFocused = focused === name;
-    const isActive = hasValue || isFocused;
-
-    return (
-      <div style={{ position: "relative" }}>
-        <label
-          style={{
-            position: "absolute",
-            left: "14px",
-            top: isActive ? "8px" : "50%",
-            transform: isActive ? "none" : "translateY(-50%)",
-            fontSize: isActive ? "10px" : "14px",
-            color: isFocused
-              ? "rgba(167,139,250,0.8)"
-              : "rgba(255,255,255,0.3)",
-            transition: "all 0.2s ease",
-            pointerEvents: "none",
-            letterSpacing: isActive ? "0.05em" : "normal",
-            textTransform: isActive ? "uppercase" : "none",
-          }}
-        >
-          {label}
-        </label>
-        <input
-          type={type}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          required
-          onFocus={() => setFocused(name)}
-          onBlur={() => setFocused("")}
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: isActive ? "24px 14px 10px" : "16px 14px",
-            fontSize: "14px",
-            color: "white",
-            backgroundColor: "rgba(255,255,255,0.03)",
-            border: `1px solid ${isFocused ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`,
-            borderRadius: "12px",
-            outline: "none",
-            transition: "all 0.2s ease",
-          }}
-        />
-      </div>
-    );
-  };
 
   return (
     <div
@@ -137,7 +133,7 @@ function Signup() {
       </div>
 
       {/* Stars */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(50)].map((_, i) => (
           <div
             key={i}
@@ -362,14 +358,18 @@ function Signup() {
                 marginBottom: "24px",
               }}
             >
-              <FloatingInput type="text" name="name" label="Full Name" />
-              <FloatingInput type="email" name="email" label="Email" />
-              <FloatingInput type="password" name="password" label="Password" />
-              <FloatingInput
-                type="password"
-                name="confirmPassword"
-                label="Confirm Password"
-              />
+              <FloatingInput type="text" name="name" label="Full Name"
+                value={formData.name} isFocused={focused === "name"}
+                onChange={handleChange} onFocus={() => setFocused("name")} onBlur={() => setFocused("")} />
+              <FloatingInput type="email" name="email" label="Email"
+                value={formData.email} isFocused={focused === "email"}
+                onChange={handleChange} onFocus={() => setFocused("email")} onBlur={() => setFocused("")} />
+              <FloatingInput type="password" name="password" label="Password"
+                value={formData.password} isFocused={focused === "password"}
+                onChange={handleChange} onFocus={() => setFocused("password")} onBlur={() => setFocused("")} />
+              <FloatingInput type="password" name="confirmPassword" label="Confirm Password"
+                value={formData.confirmPassword} isFocused={focused === "confirmPassword"}
+                onChange={handleChange} onFocus={() => setFocused("confirmPassword")} onBlur={() => setFocused("")} />
             </div>
 
             {/* Password hint */}

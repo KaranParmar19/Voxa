@@ -68,7 +68,7 @@ function Login() {
       </div>
 
       {/* Stars */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(50)].map((_, i) => (
           <div
             key={i}
