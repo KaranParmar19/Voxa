@@ -1,8 +1,29 @@
 services:
-  # Backend Service (Node.js)
+  # Frontend (Static Site)
+  - type: web
+    name: voxa-client
+    runtime: static
+    region: singapore
+
+    buildCommand: |
+      cd client
+      npm install
+      npm run build
+
+    staticPublishPath: client/dist
+
+    envVars:
+      - key: VITE_SERVER_URL
+        fromService:
+          name: voxa-server
+          type: web
+          property: url
+
+
+  # Backend (Node.js)
   - type: web
     name: voxa-server
-    env: node
+    runtime: node
     region: singapore
     plan: free
 
@@ -20,26 +41,6 @@ services:
 
       - key: CLIENT_URL
         fromService:
-          type: static_site
           name: voxa-client
-          property: url
-
-
-  # Frontend Service (React/Vite)
-  - type: static_site
-    name: voxa-client
-    region: singapore
-
-    buildCommand: |
-      cd client
-      npm install
-      npm run build
-
-    staticPublishPath: client/dist
-
-    envVars:
-      - key: VITE_SERVER_URL
-        fromService:
           type: web
-          name: voxa-server
           property: url
