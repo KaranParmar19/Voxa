@@ -25,8 +25,9 @@ export const AuthProvider = ({ children }) => {
 
             if (urlToken) {
                 localStorage.setItem('voxaToken', urlToken);
-                // Clean URL
-                window.history.replaceState({}, document.title, window.location.pathname);
+                // Redirect to dashboard after Google OAuth
+                window.location.href = '/dashboard';
+                return;
             }
 
             const token = localStorage.getItem('voxaToken');

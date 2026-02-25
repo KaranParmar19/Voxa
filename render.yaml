@@ -43,3 +43,9 @@ services:
           name: voxa-client
           type: web
           envVarKey: RENDER_EXTERNAL_URL
+
+      - key: SERVER_URL
+        fromService:
+          name: voxa-server
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
