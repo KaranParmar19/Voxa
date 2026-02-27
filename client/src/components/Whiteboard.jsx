@@ -545,6 +545,29 @@ export default function Whiteboard({ roomId, followingId, initialData, isDarkMod
         };
         canvas.on('object:modified', handleObjectModified);
 
+        // ── Text sync: emit while user is typing (throttled) ──
+        let textEmitTimer = null;
+        const handleTextChanged = (e) => {
+            const obj = e.target;
+            if (!obj || !obj.id) return;
+            // Throttle to max 1 emit per 150ms to avoid flooding
+            clearTimeout(textEmitTimer);
+            textEmitTimer = setTimeout(() => {
+                socket.emit('draw-data', { roomId, data: obj.toObject(['id']) });
+            }, 150);
+        };
+        canvas.on('text:changed', handleTextChanged);
+
+        // ── Text sync: always emit the final state when editing finishes ──
+        const handleEditingExited = (e) => {
+            const obj = e.target;
+            if (obj && obj.id) {
+                clearTimeout(textEmitTimer); // cancel any pending throttled emit
+                socket.emit('draw-data', { roomId, data: obj.toObject(['id']) });
+            }
+        };
+        canvas.on('editing:exited', handleEditingExited);
+
         // Force IText editing inside groups on double click
         const handleDblClick = (opt) => {
             let target = opt.target;
@@ -755,6 +778,9 @@ export default function Whiteboard({ roomId, followingId, initialData, isDarkMod
             canvas.off('selection:created', handleSelectionEmit);
             canvas.off('selection:updated', handleSelectionEmit);
             canvas.off('selection:cleared', handleSelectionEmit);
+            canvas.off('text:changed', handleTextChanged);
+            canvas.off('editing:exited', handleEditingExited);
+            clearTimeout(textEmitTimer);
             socket.off('interaction-start', handleRemoteStart);
             socket.off('interaction-update', handleRemoteUpdate);
             socket.off('interaction-end', handleRemoteEnd);
