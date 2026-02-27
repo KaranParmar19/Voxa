@@ -59,7 +59,20 @@ const useVoiceChat = (roomId, user, socket) => {
         const initVoice = async () => {
             try {
                 console.log('🎤 VoiceChat: Requesting Mic Permissions...');
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: false,
+                    audio: {
+                        // ── Hardware-level voice processing ──
+                        echoCancellation: true,      // removes echo of remote speaker
+                        noiseSuppression: true,      // filters background noise
+                        autoGainControl: true,       // normalises volume automatically
+                        // ── Quality settings ──
+                        sampleRate: 48000,           // Opus works best at 48 kHz
+                        sampleSize: 16,
+                        channelCount: 1,             // mono is optimal for voice
+                        latency: 0,                  // request lowest possible latency
+                    },
+                });
 
                 if (!isMounted.current) {
                     stream.getTracks().forEach(track => track.stop());
@@ -163,12 +176,26 @@ const useVoiceChat = (roomId, user, socket) => {
         };
     }, [roomId]);
 
+    /**
+     * sdpTransform: Modify the SDP to give Opus higher bitrate + FEC.
+     * Default Chrome Opus bitrate is ~32 kbps — we raise it to 128 kbps.
+     * useinbandfec=1 enables Forward Error Correction so packet loss
+     * sounds like a brief muffling rather than a hard cut.
+     */
+    function sdpTransform(sdp) {
+        return sdp.replace(
+            /a=fmtp:(\d+) (.*)useinbandfec=1(.*)/g,
+            'a=fmtp:$1 $2useinbandfec=1$3;maxaveragebitrate=128000;usedtx=0'
+        );
+    }
+
     function createPeer(userToSignal, callerId, stream, user) {
         const peer = new SimplePeer({
             initiator: true,
-            trickle: true, // ✅ send ICE candidates incrementally — much faster & more reliable
+            trickle: true,
             stream,
             config: { iceServers: ICE_SERVERS },
+            sdpTransform,          // ✅ boost Opus bitrate
         });
 
         peer.on('signal', signal => {
@@ -183,9 +210,10 @@ const useVoiceChat = (roomId, user, socket) => {
     function addPeer(incomingSignal, callerId, stream) {
         const peer = new SimplePeer({
             initiator: false,
-            trickle: true, // ✅ must match initiator setting
+            trickle: true,
             stream,
             config: { iceServers: ICE_SERVERS },
+            sdpTransform,          // ✅ boost Opus bitrate on receiver side too
         });
 
         peer.on('signal', signal => {
