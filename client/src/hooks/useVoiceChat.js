@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import SimplePeer from 'simple-peer';
 
 // Polyfill for global
@@ -9,7 +9,10 @@ if (typeof window !== 'undefined' && !window.global) {
 const useVoiceChat = (roomId, user, socket) => {
     const [peers, setPeers] = useState([]); // [{ peerID, peer }]
     const [isMuted, setIsMuted] = useState(false);
-    const userAudioRef = useRef();
+    const [loopbackActive, setLoopbackActive] = useState(false);
+
+    const localStreamRef = useRef(null);   // the raw MediaStream from mic
+    const loopbackAudioRef = useRef(null); // hidden <audio> for loopback
     const peersRef = useRef([]);
     const socketRef = useRef(socket);
 
@@ -35,7 +38,7 @@ const useVoiceChat = (roomId, user, socket) => {
                 }
 
                 console.log("🎤 VoiceChat: Mic Access Granted!");
-                userAudioRef.current = stream;
+                localStreamRef.current = stream;
 
                 // --- Handlers ---
                 const handleUserJoined = (newUser) => {
@@ -110,8 +113,13 @@ const useVoiceChat = (roomId, user, socket) => {
 
         return () => {
             isMounted.current = false;
-            if (userAudioRef.current) {
-                userAudioRef.current.getTracks().forEach(track => track.stop());
+            // Stop loopback if active
+            if (loopbackAudioRef.current) {
+                loopbackAudioRef.current.srcObject = null;
+            }
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+                localStreamRef.current = null;
             }
             if (cleanupListeners) cleanupListeners();
             peersRef.current.forEach(({ peer }) => {
@@ -132,7 +140,7 @@ const useVoiceChat = (roomId, user, socket) => {
             socketRef.current.emit("sending-signal", { userToSignal, callerId, signal, user });
         });
 
-        // peer.on("error", err => console.error("❌ Initiator Error", err));
+        peer.on("error", err => console.error("❌ Initiator Peer Error:", err));
         return peer;
     }
 
@@ -147,14 +155,14 @@ const useVoiceChat = (roomId, user, socket) => {
             socketRef.current.emit("returning-signal", { signal, callerId });
         });
 
-        // peer.on("error", err => console.error("❌ Receiver Error", err));
+        peer.on("error", err => console.error("❌ Receiver Peer Error:", err));
         peer.signal(incomingSignal);
         return peer;
     }
 
     const toggleMute = () => {
-        if (userAudioRef.current) {
-            const audioTrack = userAudioRef.current.getAudioTracks()[0];
+        if (localStreamRef.current) {
+            const audioTrack = localStreamRef.current.getAudioTracks()[0];
             if (audioTrack) {
                 audioTrack.enabled = !audioTrack.enabled;
                 setIsMuted(!audioTrack.enabled);
@@ -162,7 +170,38 @@ const useVoiceChat = (roomId, user, socket) => {
         }
     };
 
-    return { peers, isMuted, toggleMute };
+    // Loopback: play your own mic audio back to yourself
+    const toggleLoopback = useCallback(() => {
+        if (!loopbackAudioRef.current) {
+            // Create a hidden audio element for loopback
+            const audio = document.createElement('audio');
+            audio.autoplay = true;
+            audio.muted = false;
+            // Do NOT set 'muted' – we WANT to hear ourselves
+            document.body.appendChild(audio);
+            loopbackAudioRef.current = audio;
+        }
+
+        if (!loopbackActive) {
+            // Start loopback
+            if (localStreamRef.current) {
+                loopbackAudioRef.current.srcObject = localStreamRef.current;
+                loopbackAudioRef.current
+                    .play()
+                    .catch(e => console.warn("Loopback play error:", e));
+                setLoopbackActive(true);
+                console.log("🔁 Mic loopback ON");
+            }
+        } else {
+            // Stop loopback
+            loopbackAudioRef.current.pause();
+            loopbackAudioRef.current.srcObject = null;
+            setLoopbackActive(false);
+            console.log("🔇 Mic loopback OFF");
+        }
+    }, [loopbackActive]);
+
+    return { peers, isMuted, toggleMute, loopbackActive, toggleLoopback };
 };
 
 export default useVoiceChat;

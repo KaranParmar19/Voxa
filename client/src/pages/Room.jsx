@@ -9,7 +9,7 @@ import CodeEditor from '../components/CodeEditor';
 import Chat from '../components/Chat';
 import CommandPalette from '../components/CommandPalette';
 import useVoiceChat from '../hooks/useVoiceChat';
-import { Mic, MicOff, Copy, Check, LogOut, Users, Crown, Sparkles, PenLine, Code2, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, Share2, Eye, EyeOff } from 'lucide-react';
+import { Mic, MicOff, Copy, Check, LogOut, Users, Crown, Sparkles, PenLine, Code2, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, Share2, Eye, EyeOff, Headphones } from 'lucide-react';
 
 /* ──────────────────────────────────────────────
    DESIGN TOKENS
@@ -55,7 +55,7 @@ const Room = () => {
     const mainPanelRef = useRef(null);
     const notifiedUsersRef = useRef(new Set());
 
-    const { peers, isMuted, toggleMute } = useVoiceChat(roomId, user, socket);
+    const { peers, isMuted, toggleMute, loopbackActive, toggleLoopback } = useVoiceChat(roomId, user, socket);
 
     const [sidebarWidth, setSidebarWidth] = useState(() => {
         const saved = localStorage.getItem(`room-sidebar-width-${roomId}`);
@@ -379,6 +379,23 @@ const Room = () => {
                             {isMuted ? <MicOff size={14} /> : <Mic size={14} />}
                         </button>
 
+                        {/* Loopback Test */}
+                        <button
+                            onClick={toggleLoopback}
+                            className="icon-btn"
+                            title={loopbackActive ? 'Stop Mic Test (Loopback)' : 'Test Mic (Loopback)'}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: '32px', height: '32px', borderRadius: t.r8,
+                                cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+                                backgroundColor: loopbackActive ? 'rgba(251,191,36,0.15)' : 'transparent',
+                                color: loopbackActive ? '#fbbf24' : t.text3,
+                                boxShadow: loopbackActive ? '0 0 8px rgba(251,191,36,0.3)' : 'none',
+                            }}
+                        >
+                            <Headphones size={14} />
+                        </button>
+
                         <div style={{ width: '1px', height: '16px', backgroundColor: t.border, margin: '0 2px' }} />
 
                         {/* Fullscreen toggle */}
@@ -531,11 +548,18 @@ const Room = () => {
 const Audio = ({ peer }) => {
     const audioRef = useRef();
     useEffect(() => {
-        peer.on("stream", stream => {
+        // Fix: stream event may fire before this component mounts.
+        // Check peer.streams[0] synchronously first, then listen for future events.
+        if (peer.streams && peer.streams[0]) {
+            if (audioRef.current) audioRef.current.srcObject = peer.streams[0];
+        }
+        const onStream = (stream) => {
             if (audioRef.current) audioRef.current.srcObject = stream;
-        });
+        };
+        peer.on("stream", onStream);
+        return () => peer.off("stream", onStream);
     }, [peer]);
-    return <audio ref={audioRef} autoPlay playsInline controls={false} />;
+    return <audio ref={audioRef} autoPlay playsInline />;
 };
 
 export default Room;
