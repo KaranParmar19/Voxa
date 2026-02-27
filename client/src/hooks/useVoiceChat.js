@@ -6,13 +6,42 @@ if (typeof window !== 'undefined' && !window.global) {
     window.global = window;
 }
 
+// Multiple public STUN servers for better NAT traversal reliability.
+// A TURN server is needed for symmetric NATs (corporate networks, etc.)
+// If you have a TURN server, add it here:
+//   { urls: 'turn:your-turn-server:3478', username: '...', credential: '...' }
+const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    // Free TURN relay (works behind most NATs and firewalls)
+    {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+    {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+    {
+        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+    },
+];
+
 const useVoiceChat = (roomId, user, socket) => {
-    const [peers, setPeers] = useState([]); // [{ peerID, peer }]
+    const [peers, setPeers] = useState([]);
     const [isMuted, setIsMuted] = useState(false);
     const [loopbackActive, setLoopbackActive] = useState(false);
 
-    const localStreamRef = useRef(null);   // the raw MediaStream from mic
-    const loopbackAudioRef = useRef(null); // hidden <audio> for loopback
+    const localStreamRef = useRef(null);
+    const loopbackAudioRef = useRef(null);
     const peersRef = useRef([]);
     const socketRef = useRef(socket);
 
@@ -23,13 +52,13 @@ const useVoiceChat = (roomId, user, socket) => {
     useEffect(() => {
         if (!roomId || !user) return;
 
-        console.log("🎤 VoiceChat Hook: Mounting... Socket ID:", socket?.id);
+        console.log('🎤 VoiceChat Hook: Mounting... Socket ID:', socket?.id);
         const isMounted = { current: true };
         let cleanupListeners = null;
 
         const initVoice = async () => {
             try {
-                console.log("🎤 VoiceChat: Requesting Mic Permissions...");
+                console.log('🎤 VoiceChat: Requesting Mic Permissions...');
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
 
                 if (!isMounted.current) {
@@ -37,38 +66,46 @@ const useVoiceChat = (roomId, user, socket) => {
                     return;
                 }
 
-                console.log("🎤 VoiceChat: Mic Access Granted!");
+                console.log('🎤 VoiceChat: Mic Access Granted!');
                 localStreamRef.current = stream;
 
-                // --- Handlers ---
+                // ── When a NEW user joins, WE (the existing user) initiate a call to them ──
                 const handleUserJoined = (newUser) => {
                     const targetId = newUser.socketId;
                     if (targetId === socketRef.current.id) return;
 
+                    // With trickle=true, "signal" fires multiple times per peer.
+                    // Only create the peer once — subsequent signals come via handleReturnSignal.
                     if (peersRef.current.find(p => p.peerID === targetId)) {
-                        console.warn("⚠️ Voice: Peer already exists (Join), skipping:", targetId);
+                        console.warn('⚠️ Voice: Peer already exists (Join), skipping:', targetId);
                         return;
                     }
 
-                    console.log("📞 Voice: User joined, initiating call to:", targetId);
+                    console.log('📞 Voice: User joined, initiating call to:', targetId);
                     const peer = createPeer(targetId, socketRef.current.id, stream, user);
                     peersRef.current.push({ peerID: targetId, peer });
-                    setPeers((users) => [...users, { peerID: targetId, peer }]);
+                    setPeers(prev => [...prev, { peerID: targetId, peer }]);
                 };
 
+                // ── Receiving a call from someone who joined before us ──
                 const handleIncomingCall = (payload) => {
                     const targetId = payload.callerId;
-                    if (peersRef.current.find(p => p.peerID === targetId)) {
-                        console.warn("⚠️ Voice: Peer already exists (Incoming), skipping:", targetId);
+                    const existingEntry = peersRef.current.find(p => p.peerID === targetId);
+
+                    if (existingEntry) {
+                        // This is a trickle ICE candidate for an already-established peer — forward it.
+                        console.log('🔀 Voice: Trickle signal for existing peer:', targetId);
+                        existingEntry.peer.signal(payload.signal);
                         return;
                     }
 
-                    console.log("📞 Voice: Receiving call from:", targetId);
+                    console.log('📞 Voice: Receiving call from:', targetId);
                     const peer = addPeer(payload.signal, targetId, stream);
                     peersRef.current.push({ peerID: targetId, peer });
-                    setPeers((users) => [...users, { peerID: targetId, peer }]);
+                    setPeers(prev => [...prev, { peerID: targetId, peer }]);
                 };
 
+                // ── Answer signal coming back to the initiator after they sent an offer ──
                 const handleReturnSignal = (payload) => {
                     const item = peersRef.current.find(p => p.peerID === payload.id);
                     if (item) {
@@ -85,25 +122,23 @@ const useVoiceChat = (roomId, user, socket) => {
                     }
                 };
 
-                // Attach Listeners
                 if (socketRef.current) {
-                    socketRef.current.on("user-joined", handleUserJoined);
-                    socketRef.current.on("user-joined-signal", handleIncomingCall);
-                    socketRef.current.on("receiving-returned-signal", handleReturnSignal);
-                    socketRef.current.on("user-left", handleUserLeft);
+                    socketRef.current.on('user-joined', handleUserJoined);
+                    socketRef.current.on('user-joined-signal', handleIncomingCall);
+                    socketRef.current.on('receiving-returned-signal', handleReturnSignal);
+                    socketRef.current.on('user-left', handleUserLeft);
                 }
 
                 return () => {
                     if (socketRef.current) {
-                        socketRef.current.off("user-joined", handleUserJoined);
-                        socketRef.current.off("user-joined-signal", handleIncomingCall);
-                        socketRef.current.off("receiving-returned-signal", handleReturnSignal);
-                        socketRef.current.off("user-left", handleUserLeft);
+                        socketRef.current.off('user-joined', handleUserJoined);
+                        socketRef.current.off('user-joined-signal', handleIncomingCall);
+                        socketRef.current.off('receiving-returned-signal', handleReturnSignal);
+                        socketRef.current.off('user-left', handleUserLeft);
                     }
                 };
-
             } catch (err) {
-                console.error("Voice Chat Error:", err);
+                console.error('Voice Chat Error:', err);
             }
         };
 
@@ -113,7 +148,6 @@ const useVoiceChat = (roomId, user, socket) => {
 
         return () => {
             isMounted.current = false;
-            // Stop loopback if active
             if (loopbackAudioRef.current) {
                 loopbackAudioRef.current.srcObject = null;
             }
@@ -132,30 +166,34 @@ const useVoiceChat = (roomId, user, socket) => {
     function createPeer(userToSignal, callerId, stream, user) {
         const peer = new SimplePeer({
             initiator: true,
-            trickle: false,
+            trickle: true, // ✅ send ICE candidates incrementally — much faster & more reliable
             stream,
+            config: { iceServers: ICE_SERVERS },
         });
 
-        peer.on("signal", signal => {
-            socketRef.current.emit("sending-signal", { userToSignal, callerId, signal, user });
+        peer.on('signal', signal => {
+            socketRef.current.emit('sending-signal', { userToSignal, callerId, signal, user });
         });
 
-        peer.on("error", err => console.error("❌ Initiator Peer Error:", err));
+        peer.on('connect', () => console.log('✅ Initiator: P2P connected to', userToSignal));
+        peer.on('error', err => console.error('❌ Initiator Peer Error:', err));
         return peer;
     }
 
     function addPeer(incomingSignal, callerId, stream) {
         const peer = new SimplePeer({
             initiator: false,
-            trickle: false,
+            trickle: true, // ✅ must match initiator setting
             stream,
+            config: { iceServers: ICE_SERVERS },
         });
 
-        peer.on("signal", signal => {
-            socketRef.current.emit("returning-signal", { signal, callerId });
+        peer.on('signal', signal => {
+            socketRef.current.emit('returning-signal', { signal, callerId });
         });
 
-        peer.on("error", err => console.error("❌ Receiver Peer Error:", err));
+        peer.on('connect', () => console.log('✅ Receiver: P2P connected to', callerId));
+        peer.on('error', err => console.error('❌ Receiver Peer Error:', err));
         peer.signal(incomingSignal);
         return peer;
     }
@@ -170,34 +208,26 @@ const useVoiceChat = (roomId, user, socket) => {
         }
     };
 
-    // Loopback: play your own mic audio back to yourself
     const toggleLoopback = useCallback(() => {
         if (!loopbackAudioRef.current) {
-            // Create a hidden audio element for loopback
             const audio = document.createElement('audio');
             audio.autoplay = true;
-            audio.muted = false;
-            // Do NOT set 'muted' – we WANT to hear ourselves
             document.body.appendChild(audio);
             loopbackAudioRef.current = audio;
         }
 
         if (!loopbackActive) {
-            // Start loopback
             if (localStreamRef.current) {
                 loopbackAudioRef.current.srcObject = localStreamRef.current;
-                loopbackAudioRef.current
-                    .play()
-                    .catch(e => console.warn("Loopback play error:", e));
+                loopbackAudioRef.current.play().catch(e => console.warn('Loopback play error:', e));
                 setLoopbackActive(true);
-                console.log("🔁 Mic loopback ON");
+                console.log('🔁 Mic loopback ON');
             }
         } else {
-            // Stop loopback
             loopbackAudioRef.current.pause();
             loopbackAudioRef.current.srcObject = null;
             setLoopbackActive(false);
-            console.log("🔇 Mic loopback OFF");
+            console.log('🔇 Mic loopback OFF');
         }
     }, [loopbackActive]);
 
