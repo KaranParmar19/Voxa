@@ -15,7 +15,7 @@ export const signup = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        // Validation
+        // Validation (already done by middleware, but double-check)
         if (!name || !email || !password) {
             return res.status(400).json({ message: 'Please provide all required fields' });
         }
@@ -23,7 +23,8 @@ export const signup = async (req, res) => {
         // Check if user already exists
         const userExists = await User.findOne({ email });
         if (userExists) {
-            return res.status(400).json({ message: 'User already exists with this email' });
+            // Don't reveal whether email exists (security best practice)
+            return res.status(400).json({ message: 'Unable to create account. Please try again or use a different email.' });
         }
 
         // Create user
@@ -42,10 +43,11 @@ export const signup = async (req, res) => {
                 token: generateToken(user._id),
             });
         } else {
-            res.status(400).json({ message: 'Invalid user data' });
+            res.status(400).json({ message: 'Unable to create account' });
         }
     } catch (error) {
         console.error('Signup error:', error);
+        // Don't expose error details in production
         res.status(500).json({ message: 'Server error during signup' });
     }
 };
@@ -67,6 +69,11 @@ export const login = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // Check if user has a password (they might be a Google OAuth user)
+        if (!user.password) {
+            return res.status(401).json({ message: 'This account uses Google Sign-In. Please use Google to log in.' });
         }
 
         // Check password

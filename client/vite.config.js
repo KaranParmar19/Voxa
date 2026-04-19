@@ -8,4 +8,15 @@ export default defineConfig({
     react(),
     nodePolyfills(),
   ],
+  server: {
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setupTests.js',
+    globals: true,
+  },
 })

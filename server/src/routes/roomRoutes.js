@@ -1,11 +1,12 @@
 import express from 'express';
 import { createRoom, joinRoom, getRoom, getMyRooms, deleteRoom, deleteAllRooms } from '../controllers/roomController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { validateRoomInput } from '../middleware/validationMiddleware.js';
 
 const router = express.Router();
 
-router.post('/create', protect, createRoom);
-router.post('/join', protect, joinRoom);
+router.post('/create', protect, validateRoomInput, createRoom);
+router.post('/join', protect, validateRoomInput, joinRoom);
 router.get('/my-rooms', protect, getMyRooms);
 router.delete('/all', protect, deleteAllRooms);
 router.delete('/:roomId', protect, deleteRoom);
