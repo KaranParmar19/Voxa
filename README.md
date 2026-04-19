@@ -52,7 +52,6 @@ Forget jumping between multiple apps—VOXA brings your entire workflow into one
 
 *   **🎨 Infinite Whiteboard:** High-performance, zoomable, and pannable canvas powered by Fabric.js. Draw, add shapes, text, and sticky notes with live cursor tracking. Includes undo/redo and custom themes.
 *   **💻 Real-time Code Editor:** A Monaco-based IDE directly in your browser. Supports syntax highlighting, multi-cursor collaborative editing, and live execution.
-*   **🤖 AI-Powered Diagrams:** Generate complex Mermaid.js architecture diagrams instantly from text descriptions using Google's Gemini AI.
 *   **💬 Integrated Chat:** Low-latency text chat synchronized per room, ensuring context is never lost.
 *   **🎙️ P2P Voice Channels:** Built-in WebRTC voice communication. No need for third-party meeting links; talk naturally while you work.
 *   **⚡ Sub-50ms Sync:** Instantaneous state synchronization across all connected clients via optimized WebSockets (Socket.IO).
@@ -76,9 +75,8 @@ VOXA is built on a modern MERN stack, heavily optimized for real-time performanc
 *   **Voice/Video:** `simple-peer` (WebRTC P2P mesh network)
 *   **Authentication:** Passport.js (Google OAuth20) + JWT
 
-### Database & AI
+### Database
 *   **Database:** MongoDB Atlas (Mongoose ODM)
-*   **AI Integration:** Google Generative AI (`@google/generative-ai` - Gemini Pro)
 
 ## ⚙️ System Architecture
 
@@ -87,17 +85,12 @@ VOXA is built on a modern MERN stack, heavily optimized for real-time performanc
 3.  **Signaling Server (WebRTC):** The Node server acts as a signaling bridge, passing SDP offers/answers and ICE candidates between clients to establish direct P2P mesh connections for voice chat.
 4.  **Persistence Layer:** Background workers (or asynchronous event handlers) periodically batch-save the room's current state (whiteboard object array, code string, chat history) to MongoDB to ensure data durability without blocking the main event loop.
 
-### How AI Diagram Generation Works
-The client sends a natural language prompt to the Node server. The server constructs a strict prompt requesting *only* Mermaid.js syntax and forwards it to the Gemini API. The response is parsed, validated, and broadcasted via WebSockets to all clients, where the Mermaid React component renders the SVG simultaneously for everyone.
-
 ## 🚀 Installation & Local Setup
 
 ### Prerequisites
 *   Node.js (v18+)
 *   MongoDB Instance (Local or Atlas)
 *   Google Cloud Console Project (for OAuth)
-*   Google AI Studio API Key (for Gemini)
-
 ### 1. Clone the repository
 ```bash
 git clone https://github.com/KaranParmar19/Voxa.git
