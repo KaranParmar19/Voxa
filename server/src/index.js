@@ -1,4 +1,12 @@
 import 'dotenv/config'; // Load env vars first!
+import lantern from '@lantern-apm/sdk';
+
+// Initialize Lantern APM
+lantern.init({
+  projectKey: 'ltrn_live_06e8432088f387e8dbfd444168bbc079',
+  collectorURL: 'https://lantern-collector.onrender.com'
+});
+
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
