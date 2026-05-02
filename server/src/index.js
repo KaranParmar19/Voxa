@@ -41,6 +41,7 @@ const io = new Server(server, {
 });
 
 // Middleware
+app.use(lantern.middleware()); // Lantern APM - Captures request metrics
 app.use(cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true,
