@@ -1,7 +1,9 @@
 import 'dotenv/config'; // Load env vars first!
-import lantern from '@lantern-apm/sdk';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
 // Initialize Lantern APM
+const lantern = require('@lantern-apm/sdk');
 lantern.init({
   projectKey: 'ltrn_live_06e8432088f387e8dbfd444168bbc079',
   collectorURL: 'https://lantern-collector.onrender.com'
