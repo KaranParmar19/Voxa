@@ -6,7 +6,8 @@ const require = createRequire(import.meta.url);
 const lantern = require('@lantern-apm/sdk');
 lantern.init({
   projectKey: 'ltrn_live_06e8432088f387e8dbfd444168bbc079',
-  collectorURL: 'https://lantern-collector.onrender.com'
+  collectorURL: 'https://lantern-collector.onrender.com',
+  debug: true
 });
 
 import express from 'express';
